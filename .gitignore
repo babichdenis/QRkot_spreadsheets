@@ -50,7 +50,9 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
-
+*.db
+fastapi.db
+test.db
 # Translations
 *.mo
 *.pot
@@ -130,3 +132,7 @@ dmypy.json
 
 # .idea
 .idea
+
+logs/
+
+.DS_Store
