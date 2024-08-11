@@ -58,14 +58,25 @@ async def partially_update_charity_project(
     session: AsyncSession = Depends(get_async_session),
 ):
     """Only to superuser. Updates the object of the charity project."""
-    charity_project = await check_charity_project_exists(project_id, session)
-    charity_project = await check_charity_project_active(charity_project, session)
+    charity_project = await check_charity_project_exists(
+        project_id,
+        session)
+    charity_project = await check_charity_project_active(
+        charity_project,
+        session)
     if obj_in.name:
-        await check_name_duplicate(obj_in.name, session)
+        await check_name_duplicate(
+            obj_in.name,
+            session)
     if not obj_in.full_amount:
-        return await charity_project_crud.update(charity_project, obj_in, session)
-    await check_charity_project_invested_amount(obj_in.full_amount,
-                                                charity_project.invested_amount, session)
+        return await charity_project_crud.update(
+            charity_project,
+            obj_in,
+            session)
+    await check_charity_project_invested_amount(
+        obj_in.full_amount,
+        charity_project.invested_amount,
+        session)
     return await process_donation(await charity_project_crud.update(
         charity_project, obj_in, session), Donation, session)
 
