@@ -15,7 +15,6 @@ from app.schemas.charity_project import (CharityProjectCreate,
                                          CharityProjectUpdate)
 from app.services.investment import process_donation
 
-
 router = APIRouter()
 
 
@@ -38,10 +37,10 @@ async def create_new_charity_project(
         charity_project,
         session
     )
-    return await process_donation(new_project,
-                                  Donation,
-                                  session
-                                  )
+
+    # Получаем список CharityProject из базы данных
+    charity_project_list = await charity_project_crud.get_multi(session)
+    return await process_donation(new_project, charity_project_list, session)
 
 
 @router.get(

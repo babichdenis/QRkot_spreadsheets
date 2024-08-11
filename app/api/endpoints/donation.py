@@ -9,7 +9,6 @@ from app.models.user import User
 from app.schemas.donation import DonationCreate, DonationDB, DonationDBAll
 from app.services.investment import process_donation
 
-
 router = APIRouter()
 
 
@@ -30,9 +29,12 @@ async def create_new_donation(
         session,
         user
     )
+
+    # Получаем объект CharityProject из базы данных
+    charity_project = await get_charity_project_from_database()
     return await process_donation(
         new_donation,
-        CharityProject,
+        charity_project,
         session
     )
 
