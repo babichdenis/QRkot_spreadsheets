@@ -1,15 +1,9 @@
-from sqlalchemy import Column, Integer, Text, ForeignKey
+from sqlalchemy import Column, Integer, ForeignKey, Text
 
-from .common_base import CommonBase
+from app.models.charity_base import CharityBase
 
 
-class Donation(CommonBase):
+class Donation(CharityBase):
+    """The donation model."""
     user_id = Column(Integer, ForeignKey('user.id'))
     comment = Column(Text)
-
-    def __repr__(self):
-        return (
-            f'{super().__repr__()},'
-            f'user_id={self.user_id},'
-            f'comment={self.comment}'
-        )

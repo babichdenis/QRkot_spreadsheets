@@ -1,58 +1,39 @@
 from datetime import datetime
-from typing import Optional, Union
+from typing import Optional
 
-from pydantic import BaseModel, Extra, Field, PositiveInt, validator
+from pydantic import BaseModel, Extra, Field, PositiveInt
 
-from app.core.config import Constant
+from app.variables import MAX_LENGTH, MIN_LENGTH
 
 
 class CharityProjectBase(BaseModel):
-    name: Optional[str] = Field(
-        None,
-        min_length=Constant.NAME_FLD_MIN_LEN,
-        max_length=Constant.NAME_FLD_MAX_LEN
-    )
-    description: Optional[str] = Field(
-        None,
-        min_length=Constant.NAME_FLD_MIN_LEN
-    )
-    full_amount: PositiveInt = Field(..., example=100)
-
-    class Config:
-        min_anystr_length = 1
+    """The basic scheme of the project."""
+    name: Optional[str] = Field(None, min_length=MIN_LENGTH, max_length=MAX_LENGTH)
+    description: Optional[str] = Field(None, min_length=MIN_LENGTH)
+    full_amount: Optional[PositiveInt]
 
 
 class CharityProjectCreate(CharityProjectBase):
-    name: str = Field(
-        ...,
-        min_length=Constant.NAME_FLD_MIN_LEN,
-        max_length=Constant.NAME_FLD_MAX_LEN
-    )
-    description: str = Field(
-        ...,
-        min_length=Constant.NAME_FLD_MIN_LEN
-    )
+    """Schema for creating a new project."""
+    name: str = Field(..., min_length=MIN_LENGTH, max_length=MAX_LENGTH)
+    description: str = Field(..., min_length=MIN_LENGTH)
     full_amount: PositiveInt
 
 
 class CharityProjectUpdate(CharityProjectBase):
-
-    @validator('name', 'description', 'full_amount')
-    def field_not_empty(cls, value: Union[str, int]):
-        if value is None:
-            raise ValueError('Имя проекта не может быть пустым!')
-        return value
+    """Schema for updating the project."""
 
     class Config:
         extra = Extra.forbid
 
 
-class CharityProjectDB(CharityProjectCreate):
+class CharityProjectDB(CharityProjectBase):
+    """Schema for displaying projects."""
     id: int
-    invested_amount: int
-    fully_invested: bool
-    create_date: datetime
+    invested_amount: Optional[int]
+    create_date: Optional[datetime]
     close_date: Optional[datetime]
+    fully_invested: Optional[bool]
 
     class Config:
         orm_mode = True

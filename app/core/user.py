@@ -1,33 +1,49 @@
 import logging
+from logging.handlers import RotatingFileHandler
 from typing import Optional, Union
 
-from app.core.config import configure_logging, settings
-from app.core.db import get_async_session
-from app.models.user import User
-from app.schemas.user import UserCreate
 from fastapi import Depends, Request
-from fastapi_users import (BaseUserManager, FastAPIUsers, IntegerIDMixin,
-                           InvalidPasswordException)
-from fastapi_users.authentication import (AuthenticationBackend,
-                                          BearerTransport, JWTStrategy)
+from fastapi_users import (
+    BaseUserManager, FastAPIUsers, IntegerIDMixin, InvalidPasswordException
+)
+from fastapi_users.authentication import (
+    AuthenticationBackend, BearerTransport, JWTStrategy
+)
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
+from app.core.db import get_async_session
+from app.models.user import User
+from app.schemas.user import UserCreate
+from app.variables import (
+    BACKUP_COUNT, LIFETIME_SECONDS,
+    MAX_BYTES, UNCORRECT_LEN_OF_PASSWORD
+)
 
-configure_logging()
+
+logging.basicConfig(
+    format='%(asctime)s, %(levelname)s, %(name)s, %(message)s',
+    level=logging.INFO,
+    filename='cat_charity_fund.log',
+)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = RotatingFileHandler(
+    'qrcot.log', maxBytes=MAX_BYTES, backupCount=BACKUP_COUNT
+)
+logger.addHandler(handler)
 
 
 async def get_user_db(session: AsyncSession = Depends(get_async_session)):
     yield SQLAlchemyUserDatabase(session, User)
 
+
 bearer_transport = BearerTransport(tokenUrl='auth/jwt/login')
 
 
 def get_jwt_strategy() -> JWTStrategy:
-    return JWTStrategy(
-        secret=settings.secret,
-        lifetime_seconds=settings.jwt_token_lifetime
-    )
+    return JWTStrategy(secret=settings.secret, lifetime_seconds=LIFETIME_SECONDS)
 
 
 auth_backend = AuthenticationBackend(
@@ -44,7 +60,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         password: str,
         user: Union[UserCreate, User],
     ) -> None:
-        if len(password) < settings.user_password_min_len:
+        if len(password) < UNCORRECT_LEN_OF_PASSWORD:
             raise InvalidPasswordException(
                 reason='Password should be at least 3 characters'
             )
@@ -56,7 +72,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     async def on_after_register(
             self, user: User, request: Optional[Request] = None
     ):
-        logging.info(f'Пользователь {user.email} зарегистрирован.')
+        logger.info(f'Пользователь {user.email} зарегистрирован.')
 
 
 async def get_user_manager(user_db=Depends(get_user_db)):

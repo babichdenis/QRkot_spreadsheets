@@ -1,19 +1,9 @@
-from sqlalchemy import CheckConstraint, Column, String, Text
-from sqlalchemy.orm import declared_attr
+from sqlalchemy import Column, String, Text
 
-from .common_base import CommonBase
+from app.models.charity_base import CharityBase
 
 
-class CharityProject(CommonBase):
-    @declared_attr
-    def __table_args__(cls):
-        return (
-            *super().__table_args__, CheckConstraint('length(name) > 0'),
-            CheckConstraint('length(description) > 0'))
-
-    name = Column(
-        String(100),
-        unique=True,
-        nullable=False
-    )
+class CharityProject(CharityBase):
+    """The project model."""
+    name = Column(String(100), unique=True, nullable=False)
     description = Column(Text, nullable=False)
