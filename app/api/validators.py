@@ -18,13 +18,20 @@ async def check_name_duplicate(
             detail='Проект с таким именем уже существует!')
 
 
-async def check_project_exists(
-        project_id: int, session: AsyncSession) -> CharityProject:
-    project = await project_crud.get(project_id, session)
-    if project is None:
+async def check_charity_project_exists(
+    charity_project_id: int,
+    session: AsyncSession,
+) -> CharityProject:
+    charity_project = await charity_project_crud.get_project_by_id(
+        charity_project_id,
+        session
+    )
+    if not charity_project:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='Проект не найден!')
-    return project
+            status_code=HTTPStatus.NOT_FOUND,
+            detail='Проект не найден!'
+        )
+    return charity_project
 
 
 async def check_project_before_edit(

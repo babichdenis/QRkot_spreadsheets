@@ -41,20 +41,26 @@ async def get_all_charity_projects(
 
 
 @router.patch(
-    '/{project_id}', response_model=CharityProjectDB,
-    dependencies=[Depends(current_superuser)])
-async def partially_update_project(
-        project_id: int, obj_in: CharityProjectUpdate,
-        session: AsyncSession = Depends(get_async_session)):
-    '''Только для суперюзеров.\n
-    Закрытый проект нельзя редактировать;
-     нельзя установить требуемую сумму меньше уже вложенной.'''
-    project = await check_project_before_edit(project_id, obj_in, session)
-    await check_name_duplicate(obj_in.name, session)
-    await project_crud.update(project, obj_in, session)
-    await investing(session)
-    await session.refresh(project)
-    return project
+    '/{project_id}',
+    response_model=CharityProjectDB,
+    dependencies=[Depends(current_superuser)],
+)
+async def partially_update_charity_project(
+    project_id: int,
+    obj_in: CharityProjectUpdate,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """Only to superuser. Updates the object of the charity project."""
+    charity_project = await check_charity_project_exists(project_id, session)
+    charity_project = await check_charity_project_active(charity_project, session)
+    if obj_in.name:
+        await check_name_duplicate(obj_in.name, session)
+    if not obj_in.full_amount:
+        return await charity_project_crud.update(charity_project, obj_in, session)
+    await check_charity_project_invested_amount(obj_in.full_amount,
+                                                charity_project.invested_amount, session)
+    return await process_donation(await charity_project_crud.update(
+        charity_project, obj_in, session), Donation, session)
 
 
 @router.delete(
