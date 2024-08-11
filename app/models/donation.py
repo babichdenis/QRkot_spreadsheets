@@ -1,11 +1,11 @@
 from sqlalchemy import Column, Integer, Text, ForeignKey
 
-from .charity_basemodel import CharityBaseModel
+from .common_base import CommonBase
 
 
-class Donation(CharityBaseModel):
+class Donation(CommonBase):
     user_id = Column(Integer, ForeignKey('user.id'))
-    comment = Column(Text, nullable=True)
+    comment = Column(Text)
 
     def __repr__(self):
         return (

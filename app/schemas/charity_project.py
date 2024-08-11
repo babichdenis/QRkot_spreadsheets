@@ -6,7 +6,7 @@ from pydantic import BaseModel, Extra, Field, PositiveInt, validator
 from app.core.config import Constant
 
 
-class CharityProject(BaseModel):
+class CharityProjectBase(BaseModel):
     name: Optional[str] = Field(
         None,
         min_length=Constant.NAME_FLD_MIN_LEN,
@@ -16,7 +16,10 @@ class CharityProject(BaseModel):
         None,
         min_length=Constant.NAME_FLD_MIN_LEN
     )
-    full_amount: Optional[PositiveInt]
+    full_amount: PositiveInt = Field(..., example=100)
+
+    class Config:
+        min_anystr_length = 1
 
 
 class CharityProjectCreate(CharityProjectBase):

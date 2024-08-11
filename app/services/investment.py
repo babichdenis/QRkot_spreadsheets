@@ -1,24 +1,54 @@
 from datetime import datetime
-from typing import List
+from typing import List, Union
 
-from app.models.charity_basemodel import CharityBaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.charity_project import CharityProject
+from app.models.donation import Donation
 
 
-def investment(
-    target: CharityBaseModel,
-    sources: List[CharityBaseModel]
-) -> List[CharityBaseModel]:
-    modified = []
-    if not target.invested_amount and target.invested_amount != 0:
-        target.invested_amount = 0
-    for source in sources:
-        to_invest = target.full_amount - target.invested_amount
-        for obj in (target, source):
-            obj.invested_amount += to_invest
-            if obj.full_amount == obj.invested_amount:
-                obj.close_date = datetime.now()
-                obj.fully_invested = True
-        modified.append(source)
-        if target.fully_invested:
-            break
-    return modified
+async def close_donation(
+        obj_in: Union[CharityProject, Donation],
+) -> Union[CharityProject, Donation]:
+    obj_in.invested_amount = obj_in.full_amount
+    obj_in.fully_invested = True
+    obj_in.close_date = datetime.now()
+    return obj_in
+
+
+async def get_not_full_invested(
+        obj_in: Union[CharityProject, Donation],
+        session: AsyncSession
+) -> List[Union[CharityProject, Donation]]:
+    db_obj = await session.execute(
+        select(obj_in).where(
+            obj_in.fully_invested == 0
+        ).order_by(obj_in.create_date)
+    )
+    return db_obj.scalars().all()
+
+
+async def investing_process(
+        obj_in: Union[CharityProject, Donation],
+        obj_model: Union[CharityProject, Donation],
+        session: AsyncSession,
+) -> Union[CharityProject, Donation]:
+    not_full_invested_objects = await get_not_full_invested(obj_model, session)
+    for object in not_full_invested_objects:
+        free_amount_in = obj_in.full_amount - obj_in.invested_amount
+        free_amount_object = object.full_amount - object.invested_amount
+        if free_amount_in > free_amount_object:
+            obj_in.invested_amount += free_amount_object
+            await close_donation(object)
+        elif free_amount_in == free_amount_object:
+            await close_donation(obj_in)
+            await close_donation(object)
+        else:
+            object.invested_amount += free_amount_in
+            await close_donation(obj_in)
+        session.add(obj_in)
+        session.add(object)
+    await session.commit()
+    await session.refresh(obj_in)
+    return obj_in

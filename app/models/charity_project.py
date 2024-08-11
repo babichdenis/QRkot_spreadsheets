@@ -1,15 +1,19 @@
-from sqlalchemy import Column, String, Text
+from sqlalchemy import CheckConstraint, Column, String, Text
+from sqlalchemy.orm import declared_attr
 
-from .charity_basemodel import CharityBaseModel
+from .common_base import CommonBase
 
 
-class CharityProject(CharityBaseModel):
-    name = Column(String(100), unique=True, nullable=False)
-    description = Column(Text, nullable=False)
-
-    def __repr__(self):
+class CharityProject(CommonBase):
+    @declared_attr
+    def __table_args__(cls):
         return (
-            f'{super().__repr__()},'
-            f'name={self.name},'
-            f'description={self.description}'
-        )
+            *super().__table_args__, CheckConstraint('length(name) > 0'),
+            CheckConstraint('length(description) > 0'))
+
+    name = Column(
+        String(100),
+        unique=True,
+        nullable=False
+    )
+    description = Column(Text, nullable=False)

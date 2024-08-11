@@ -17,8 +17,8 @@ configure_logging()
 
 
 async def create_user(
-        email: EmailStr, 
-        password: str, 
+        email: EmailStr,
+        password: str,
         is_superuser: bool = False
 ):
     try:
