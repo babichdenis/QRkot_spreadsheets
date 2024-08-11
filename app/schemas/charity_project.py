@@ -8,15 +8,29 @@ from app.variables import MAX_LENGTH, MIN_LENGTH
 
 class CharityProjectBase(BaseModel):
     """The basic scheme of the project."""
-    name: Optional[str] = Field(None, min_length=MIN_LENGTH, max_length=MAX_LENGTH)
-    description: Optional[str] = Field(None, min_length=MIN_LENGTH)
+    name: Optional[str] = Field(
+        None,
+        min_length=MIN_LENGTH,
+        max_length=MAX_LENGTH
+    )
+    description: Optional[str] = Field(
+        None,
+        min_length=MIN_LENGTH
+    )
     full_amount: Optional[PositiveInt]
 
 
 class CharityProjectCreate(CharityProjectBase):
     """Schema for creating a new project."""
-    name: str = Field(..., min_length=MIN_LENGTH, max_length=MAX_LENGTH)
-    description: str = Field(..., min_length=MIN_LENGTH)
+    name: str = Field(
+        ...,
+        min_length=MIN_LENGTH,
+        max_length=MAX_LENGTH
+    )
+    description: str = Field(
+        ...,
+        min_length=MIN_LENGTH
+    )
     full_amount: PositiveInt
 
 

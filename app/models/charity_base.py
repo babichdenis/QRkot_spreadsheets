@@ -6,7 +6,6 @@ from app.core.db import Base
 
 
 class CharityBase(Base):
-    """An abstract model for inheritance in the CharityProject and Donation models."""
     __abstract__ = True
     full_amount = Column(Integer, nullable=False)
     invested_amount = Column(Integer, default=0)

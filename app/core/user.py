@@ -4,7 +4,10 @@ from typing import Optional, Union
 
 from fastapi import Depends, Request
 from fastapi_users import (
-    BaseUserManager, FastAPIUsers, IntegerIDMixin, InvalidPasswordException
+    BaseUserManager,
+    FastAPIUsers,
+    IntegerIDMixin,
+    InvalidPasswordException
 )
 from fastapi_users.authentication import (
     AuthenticationBackend, BearerTransport, JWTStrategy
@@ -43,7 +46,9 @@ bearer_transport = BearerTransport(tokenUrl='auth/jwt/login')
 
 
 def get_jwt_strategy() -> JWTStrategy:
-    return JWTStrategy(secret=settings.secret, lifetime_seconds=LIFETIME_SECONDS)
+    return JWTStrategy(
+        secret=settings.secret,
+        lifetime_seconds=LIFETIME_SECONDS)
 
 
 auth_backend = AuthenticationBackend(
@@ -85,4 +90,7 @@ fastapi_users = FastAPIUsers[User, int](
 )
 
 current_user = fastapi_users.current_user(active=True)
-current_superuser = fastapi_users.current_user(active=True, superuser=True)
+current_superuser = fastapi_users.current_user(
+    active=True,
+    superuser=True
+)

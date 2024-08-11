@@ -25,8 +25,16 @@ async def create_new_donation(
     user: User = Depends(current_user),
 ):
     """Make a new donation."""
-    new_donation = await donation_crud.create_donation(donation, session, user)
-    return await process_donation(new_donation, CharityProject, session)
+    new_donation = await donation_crud.create_donation(
+        donation,
+        session,
+        user
+    )
+    return await process_donation(
+        new_donation,
+        CharityProject,
+        session
+    )
 
 
 @router.get(
@@ -52,4 +60,7 @@ async def get_my_donations(
     user: User = Depends(current_user)
 ):
     """Returns a list of the user's donations."""
-    return await donation_crud.get_by_user(session=session, user=user)
+    return await donation_crud.get_by_user(
+        session=session,
+        user=user
+    )

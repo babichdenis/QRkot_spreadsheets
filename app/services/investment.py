@@ -31,18 +31,17 @@ def close_charity(charity_db: CharityBase) -> CharityBase:
 
 
 def distribute_money(
-        charity_obj: CharityBase,
-        charity_db: CharityBase
-) -> CharityBase:
-    remaining_charity_obj = charity_obj.full_amount - charity_obj.invested_amount
-    remaining_charity_db = charity_db.full_amount - charity_db.invested_amount
-    if remaining_charity_obj > remaining_charity_db:
-        charity_obj.invested_amount += remaining_charity_db
-        charity_db = close_charity(charity_db)
-    elif remaining_charity_obj == remaining_charity_db:
-        charity_obj = close_charity(charity_obj)
-        charity_db = close_charity(charity_db)
+        obj: CharityBase,
+        db: CharityBase) -> CharityBase:
+    remaining_obj = obj.full_amount - obj.invested_amount
+    remaining_db = db.full_amount - db.invested_amount
+    if remaining_obj > remaining_db:
+        obj.invested_amount += remaining_db
+        db = close_charity(db)
+    elif remaining_obj == remaining_db:
+        obj = close_charity(obj)
+        db = close_charity(db)
     else:
-        charity_db.invested_amount += remaining_charity_obj
-        charity_obj = close_charity(charity_obj)
-    return charity_obj, charity_db
+        db.invested_amount += remaining_obj
+        obj = close_charity(obj)
+    return obj, db

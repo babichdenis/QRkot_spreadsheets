@@ -30,9 +30,18 @@ async def create_new_charity_project(
     session: AsyncSession = Depends(get_async_session),
 ):
     """Only to superuser. Creates a charitable foundation."""
-    await check_name_duplicate(charity_project.name, session)
-    new_project = await charity_project_crud.create(charity_project, session)
-    return await process_donation(new_project, Donation, session)
+    await check_name_duplicate(
+        charity_project.name,
+        session
+    )
+    new_project = await charity_project_crud.create(
+        charity_project,
+        session
+    )
+    return await process_donation(new_project,
+                                  Donation,
+                                  session
+                                  )
 
 
 @router.get(
