@@ -2,11 +2,15 @@ from datetime import datetime
 from app.models.charity_base import CharityBase
 
 
-async def process_donation(
-        charity_obj: CharityBase,
-        charity_db_list: list) -> CharityBase:
-    for db in charity_db_list:
-        charity_obj, db = distribute_money(charity_obj, db)
+def process_donation(
+    charity_obj: CharityBase,
+    charity_db_list: list
+) -> CharityBase:
+    for charity_db in charity_db_list:
+        charity_obj, charity_db = distribute_money(
+            charity_obj,
+            charity_db
+        )
     return charity_obj
 
 
@@ -17,18 +21,19 @@ def close_charity(charity_db: CharityBase) -> CharityBase:
     return charity_db
 
 
-def distribute_money(
-        obj: CharityBase,
-        db: CharityBase) -> CharityBase:
-    remaining_obj = obj.full_amount - obj.invested_amount
-    remaining_db = db.full_amount - db.invested_amount
+def distribute_money(charity_obj: CharityBase,
+                     charity_db: CharityBase) -> CharityBase:
+    remaining_obj = charity_obj.full_amount - charity_obj.invested_amount
+    remaining_db = charity_db.full_amount - charity_db.invested_amount
+
     if remaining_obj > remaining_db:
-        obj.invested_amount += remaining_db
-        db = close_charity(db)
+        charity_obj.invested_amount += remaining_db
+        charity_db = close_charity(charity_db)
     elif remaining_obj == remaining_db:
-        obj = close_charity(obj)
-        db = close_charity(db)
+        charity_obj = close_charity(charity_obj)
+        charity_db = close_charity(charity_db)
     else:
-        db.invested_amount += remaining_obj
-        obj = close_charity(obj)
-    return obj, db
+        charity_db.invested_amount += remaining_obj
+        charity_obj = close_charity(charity_obj)
+
+    return charity_obj, charity_db

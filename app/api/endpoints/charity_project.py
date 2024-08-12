@@ -15,6 +15,7 @@ from app.schemas.charity_project import (CharityProjectCreate,
                                          CharityProjectUpdate)
 from app.services.investment import process_donation
 
+
 router = APIRouter()
 
 
@@ -29,22 +30,9 @@ async def create_new_charity_project(
     session: AsyncSession = Depends(get_async_session),
 ):
     """Only to superuser. Creates a charitable foundation."""
-    await check_name_duplicate(
-        charity_project.name,
-        session
-    )
-    new_project = await charity_project_crud.create(
-        charity_project,
-        session
-    )
-
-    # Получаем список CharityProject из базы данных
-    charity_project_list = await charity_project_crud.get_multi(session)
-    return await process_donation(
-        new_project=new_project,
-        charity_project_list=charity_project_list,
-        session=session
-    )
+    await check_name_duplicate(charity_project.name, session)
+    new_project = await charity_project_crud.create(charity_project, session)
+    return await process_donation(new_project, [Donation], session)
 
 
 @router.get(
@@ -72,25 +60,27 @@ async def partially_update_charity_project(
     """Only to superuser. Updates the object of the charity project."""
     charity_project = await check_charity_project_exists(
         project_id,
-        session)
+        session
+    )
     charity_project = await check_charity_project_active(
         charity_project,
-        session)
+        session
+    )
     if obj_in.name:
-        await check_name_duplicate(
-            obj_in.name,
-            session)
+        await check_name_duplicate(obj_in.name, session)
     if not obj_in.full_amount:
         return await charity_project_crud.update(
             charity_project,
             obj_in,
-            session)
+            session
+        )
     await check_charity_project_invested_amount(
         obj_in.full_amount,
         charity_project.invested_amount,
-        session)
+        session
+    )
     return await process_donation(await charity_project_crud.update(
-        charity_project, obj_in, session), Donation, session)
+        charity_project, obj_in, session), [Donation], session)
 
 
 @router.delete(
