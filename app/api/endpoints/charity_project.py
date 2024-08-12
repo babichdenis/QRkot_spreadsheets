@@ -32,7 +32,7 @@ async def create_new_charity_project(
     """Only to superuser. Creates a charitable foundation."""
     await check_name_duplicate(charity_project.name, session)
     new_project = await charity_project_crud.create(charity_project, session)
-    return await process_donation(new_project, [Donation], session)
+    return await process_donation(new_project, [Donation])
 
 
 @router.get(
@@ -80,7 +80,7 @@ async def partially_update_charity_project(
         session
     )
     return await process_donation(await charity_project_crud.update(
-        charity_project, obj_in, session), [Donation], session)
+        charity_project, obj_in, session), [Donation])
 
 
 @router.delete(

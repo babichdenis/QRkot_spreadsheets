@@ -34,7 +34,7 @@ async def create_new_donation(
         CharityProject,
         id=donation.charity_project_id
     )
-    return await process_donation(new_donation, [charity_project], session)
+    return await process_donation(new_donation, [charity_project])
 
 
 @router.get(
