@@ -40,7 +40,11 @@ async def create_new_charity_project(
 
     # Получаем список CharityProject из базы данных
     charity_project_list = await charity_project_crud.get_multi(session)
-    return await process_donation(new_project, charity_project_list, session)
+    return await process_donation(
+        new_project=new_project,
+        charity_project_list=charity_project_list,
+        session=session
+    )
 
 
 @router.get(
