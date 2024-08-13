@@ -1,16 +1,14 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.validators import (check_charity_project_active,
-                                check_charity_project_exists,
-                                check_charity_project_invested,
-                                check_charity_project_invested_amount,
-                                check_name_duplicate)
+from app.api.validators import (
+    check_charity_project_before_delete,
+    check_charity_project_before_edit,
+    check_name_duplicate,)
 from app.core.db import get_async_session
 from app.core.user import current_superuser
 from app.crud.charity_project import charity_project_crud
 from app.crud import charity_project_crud, donation_crud
-from app.models import Donation
 from app.schemas.charity_project import (CharityProjectCreate,
                                          CharityProjectDB,
                                          CharityProjectUpdate)
@@ -120,10 +118,14 @@ async def update_charity_project(
     dependencies=[Depends(current_superuser)]
 )
 async def remove_charity_project(
-    project_id: int,
-    session: AsyncSession = Depends(get_async_session)
+        project_id: int,
+        session: AsyncSession = Depends(get_async_session),
 ):
-    """Only to superuser. Deletes the project."""
-    charity_project = await check_charity_project_exists(project_id, session)
-    await check_charity_project_invested(charity_project, session)
-    return await charity_project_crud.remove(charity_project, session)
+    """Удалить проект. Доступ: суперпользователь."""
+    charity_project_db = await check_charity_project_before_delete(
+        project_id=project_id,
+        session=session)
+    charity_project_db = await charity_project_crud.delete(
+        db_obj=charity_project_db,
+        session=session)
+    return charity_project_db

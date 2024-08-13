@@ -3,8 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_async_session
 from app.core.user import current_user, current_superuser
-from app.crud.donation import donation_crud
-from app.models.charity_project import CharityProject
+from app.crud import charity_project_crud, donation_crud
+# from app.models.charity_project import CharityProject
 from app.models.user import User
 from app.schemas.donation import DonationCreate, DonationDB, DonationDBAll
 from app.services.investment import investment_process

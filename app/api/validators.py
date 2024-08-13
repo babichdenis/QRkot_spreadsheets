@@ -4,6 +4,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.charity_project import charity_project_crud
 from app.models import CharityProject
+from app.schemas.charity_project import CharityProjectUpdate
+
+
+async def check_obj_exists_by_id(
+        obj_id: int,
+        session: AsyncSession,
+) -> CharityProject:
+    """Проверить наличие объекта-БД по id."""
+    charity_project_db = await charity_project_crud.get(
+        obj_id=obj_id,
+        session=session)
+    if charity_project_db is None:
+        raise HTTPException(
+            status_code=404,
+            detail='Проекта с указанным id не существует!')
+    return charity_project_db
 
 
 async def check_name_duplicate(
@@ -66,3 +82,46 @@ async def check_charity_project_invested_amount(
             status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
             detail='Нельзя установить требуемую сумму меньше уже вложенной!'
         )
+
+
+async def check_charity_project_before_edit(
+    project_id: int,
+    project_in: CharityProjectUpdate,
+    session: AsyncSession
+) -> CharityProject:
+    """Проверить проект перед редактированием."""
+    project_db = await check_obj_exists_by_id(
+        obj_id=project_id,
+        session=session)
+    if project_db.close_date is not None:
+        raise HTTPException(
+            status_code=400,
+            detail='Закрытый проект нельзя редактировать!')
+    if (project_in.full_amount and
+            project_db.invested_amount > project_in.full_amount):
+        raise HTTPException(
+            status_code=400,
+            detail='Нельзя установить требуемую сумму меньше уже вложенной')
+    await check_name_duplicate(
+        obj_name=project_in.name,
+        session=session)
+    return project_db
+
+
+async def check_charity_project_before_delete(
+        project_id: int,
+        session: AsyncSession
+) -> CharityProject:
+    """Проверить проект: перед удалением."""
+    charity_project_db = await check_obj_exists_by_id(
+        obj_id=project_id,
+        session=session)
+    if charity_project_db.invested_amount > 0:
+        raise HTTPException(
+            status_code=400,
+            detail='В проект были внесены средства, не подлежит удалению!')
+    if charity_project_db.fully_invested:
+        raise HTTPException(
+            status_code=400,
+            detail='Закрытый проект нельзя редактировать!')
+    return charity_project_db
