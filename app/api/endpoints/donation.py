@@ -7,7 +7,7 @@ from app.crud.donation import donation_crud
 from app.models.charity_project import CharityProject
 from app.models.user import User
 from app.schemas.donation import DonationCreate, DonationDB, DonationDBAll
-from app.services.investment import process_donation
+from app.services.investment import investment_process
 
 
 router = APIRouter()
@@ -16,25 +16,25 @@ router = APIRouter()
 @router.post(
     '/',
     response_model=DonationDB,
-    response_model_exclude_none=True,
-    response_model_exclude={'user_id'}
+    response_model_exclude_none=True
 )
-async def create_new_donation(
-    donation: DonationCreate,
-    session: AsyncSession = Depends(get_async_session),
-    user: User = Depends(current_user),
+async def create_donation(
+        donation_in: DonationCreate,
+        session: AsyncSession = Depends(get_async_session),
+        user: User = Depends(current_user)
 ):
-    """Make a new donation."""
-    new_donation = await donation_crud.create_donation(
-        donation,
-        session,
-        user
-    )
-    charity_project = await session.get(
-        CharityProject,
-        id=donation.charity_project_id
-    )
-    return await process_donation(new_donation, [charity_project])
+    """Создать пожертвование. Доступ: авторизованный пользователь."""
+    donation_db = await donation_crud.create(
+        obj_in=donation_in, session=session, user=user)
+    charity_projects_db = await charity_project_crud.get_open_objects(session)
+    if charity_projects_db:
+        investment_process(
+            target=donation_db,
+            sources=charity_projects_db
+        )
+    await session.commit()
+    await session.refresh(donation_db)
+    return donation_db
 
 
 @router.get(

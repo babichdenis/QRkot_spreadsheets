@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.charity_project import CharityProject
 from app.schemas.charity_project import (CharityProjectCreate,
                                          CharityProjectUpdate)
+from app.models import User
 
 
 class CRUDBase:
@@ -54,3 +55,14 @@ class CRUDBase:
         await session.delete(db_obj)
         await session.commit()
         return db_obj
+
+    async def get_my_obj(
+            self,
+            session: AsyncSession,
+            user: User
+    ):
+        """Получить объекты current user. Доступ: авторизованный user."""
+        donations = await session.execute(
+            select(self.model).where(
+                self.model.user_id == user.id))
+        return donations.scalars().all()
