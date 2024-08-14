@@ -62,19 +62,21 @@ async def get_all_charity_projects(
     dependencies=[Depends(current_superuser)]
 )
 async def update_charity_project(
-        project_id: int,
-        charity_project_in: CharityProjectUpdate,
-        session: AsyncSession = Depends(get_async_session),
+    project_id: int,
+    charity_project_in: CharityProjectUpdate,
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Редактировать проект. Доступ: суперпользователь."""
     charity_project_db = await check_charity_project_before_edit(
         project_id=project_id,
-        charity_project_in=charity_project_in,
-        session=session)
+        project_in=charity_project_in,
+        session=session
+    )
     charity_project_db = await charity_project_crud.update(
         db_obj=charity_project_db,
         obj_in=charity_project_in,
-        session=session)
+        session=session
+    )
     return charity_project_db
 
 
