@@ -36,27 +36,27 @@ async def check_obj_exists_by_id(
 
 
 async def check_charity_project_before_edit(
-        project_id: int,
-        charity_project_in: CharityProjectUpdate,
-        session: AsyncSession
+    project_id: int,
+    project_in: CharityProjectUpdate,
+    session: AsyncSession
 ) -> CharityProject:
     """Проверить проект: перед редактированием."""
-    charity_project_db = await check_obj_exists_by_id(
+    project_db = await check_obj_exists_by_id(
         obj_id=project_id,
         session=session)
-    if charity_project_db.close_date is not None:
+    if project_db.close_date is not None:
         raise HTTPException(
             status_code=400,
             detail='Закрытый проект нельзя редактировать!')
-    if (charity_project_in.full_amount and
-            charity_project_db.invested_amount > charity_project_in.full_amount):
+    if project_in.full_amount and \
+            project_db.invested_amount > project_in.full_amount:
         raise HTTPException(
             status_code=400,
             detail='Нельзя установить требуемую сумму меньше уже вложенной')
     await check_name_obj_unique(
-        obj_name=charity_project_in.name,
+        obj_name=project_in.name,
         session=session)
-    return charity_project_db
+    return project_db
 
 
 async def check_charity_project_before_delete(

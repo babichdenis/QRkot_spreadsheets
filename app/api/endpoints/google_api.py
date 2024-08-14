@@ -17,16 +17,15 @@ router = APIRouter()
     dependencies=[Depends(current_superuser)],
 )
 async def get_report(
-        session: AsyncSession = Depends(get_async_session),
-        wrapper_services: Aiogoogle = Depends(get_service)
+    session: AsyncSession = Depends(get_async_session),
+    wrapper: Aiogoogle = Depends(get_service)
 ):
     """Создать отчет Google Sheets. Доступ: суперпользователь."""
-    charity_projects = await charity_project_crud.get_projects_by_completion_rate(session)
-    spreadsheetid = await spreadsheets_create(wrapper_services)
-    await set_user_permissions(spreadsheetid, wrapper_services)
-    await spreadsheets_update_value(spreadsheetid,
-                                    charity_projects,
-                                    wrapper_services)
-    if spreadsheetid:
-        return 'https://docs.google.com/spreadsheets/d/' + spreadsheetid
+    projects = await \
+        charity_project_crud.get_projects_by_completion_rate(session)
+    spreadsheet_id = await spreadsheets_create(wrapper)
+    await set_user_permissions(spreadsheet_id, wrapper)
+    await spreadsheets_update_value(spreadsheet_id, projects, wrapper)
+    if spreadsheet_id:
+        return 'https://docs.google.com/spreadsheets/d/' + spreadsheet_id
     return 'Нет завершенных проектов: отчет Google Sheets не создан.'
