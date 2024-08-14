@@ -13,6 +13,17 @@ class CRUDBase:
     def __init__(self, model):
         self.model = model
 
+    async def get(
+            self,
+            obj_id: int,
+            session: AsyncSession,
+    ):
+        """Получить объект по id."""
+        db_obj = await session.execute(
+            select(self.model).where(
+                self.model.id == obj_id))
+        return db_obj.scalars().first()
+
     async def get_multi(
             self, session: AsyncSession
     ):

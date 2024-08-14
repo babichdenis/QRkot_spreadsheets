@@ -23,14 +23,17 @@ async def check_obj_exists_by_id(
 
 
 async def check_name_duplicate(
-    project_name: str,
-    session: AsyncSession,
+        obj_name: str,
+        session: AsyncSession,
 ) -> None:
-    if await charity_project_crud.get_id_by_name(project_name, session):
+    """Проверить уникальность: наименование объекта."""
+    charity_project = await charity_project_crud.get_obj_by_name(
+        obj_name=obj_name,
+        session=session)
+    if charity_project is not None:
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail='Проект с таким именем уже существует!'
-        )
+            status_code=400,
+            detail='Проект с таким именем уже существует!')
 
 
 async def check_charity_project_exists(
