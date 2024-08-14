@@ -1,16 +1,46 @@
+from typing import List
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_async_session
-from app.core.user import current_user, current_superuser
+from app.core.user import current_superuser, current_user
 from app.crud import charity_project_crud, donation_crud
-# from app.models.charity_project import CharityProject
-from app.models.user import User
-from app.schemas.donation import DonationCreate, DonationDB, DonationDBAll
+from app.models import User
+from app.schemas.donation import DonationAdminDB, DonationCreate, DonationDB
 from app.services.investment import investment_process
 
-
 router = APIRouter()
+
+
+@router.get(
+    '/',
+    response_model=List[DonationAdminDB],
+    response_model_exclude_none=True,
+    dependencies=[Depends(current_superuser)]
+)
+async def get_all_donations(
+        session: AsyncSession = Depends(get_async_session),
+):
+    """Получить все пожертвования. Доступ: суперпользователь."""
+    return await donation_crud.get_multi(session=session)
+
+
+@router.get(
+    '/my',
+    response_model=List[DonationDB],
+    response_model_exclude_none=True
+)
+async def get_my_obj(
+        session: AsyncSession = Depends(get_async_session),
+        user: User = Depends(current_user)
+):
+    """
+    Получить все пожертвования текущего пользователя.
+    Доступ: авторизованный пользователь.
+    """
+    return await donation_crud.get_my_obj(
+        session=session, user=user)
 
 
 @router.post(
@@ -35,29 +65,3 @@ async def create_donation(
     await session.commit()
     await session.refresh(donation_db)
     return donation_db
-
-
-@router.get(
-    '/',
-    response_model=list[DonationDBAll],
-    response_model_exclude_none=True,
-    dependencies=[Depends(current_superuser)],
-)
-async def get_all_donation(
-        session: AsyncSession = Depends(get_async_session),
-):
-    """Returns a list of all donations."""
-    return await donation_crud.get_multi(session)
-
-
-@router.get(
-    '/my',
-    response_model=list[DonationDB],
-    response_model_exclude={'user_id'}
-)
-async def get_my_donations(
-    session: AsyncSession = Depends(get_async_session),
-    user: User = Depends(current_user)
-):
-    """Returns a list of the user's donations."""
-    return await donation_crud.get_by_user(session=session, user=user)

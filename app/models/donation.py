@@ -1,9 +1,10 @@
-from sqlalchemy import Column, Integer, ForeignKey, Text
+from sqlalchemy import Column, ForeignKey, Integer, Text
 
-from app.models.charity_base import CharityBase
+from app.core.db import PreBaseDonationCharity
 
 
-class Donation(CharityBase):
-    """The donation model."""
-    user_id = Column(Integer, ForeignKey('user.id'))
+class Donation(PreBaseDonationCharity):
+    user_id = Column(
+        Integer,
+        ForeignKey('user.id', name='fk_donation_user_id_user'))
     comment = Column(Text)

@@ -1,11 +1,12 @@
 from sqlalchemy import Column, String, Text
 
-from app.models.charity_base import CharityBase
+from app.core.config import CHARITY_NAME_MAX_LENGTH
+from app.core.db import PreBaseDonationCharity
 
 
-class CharityProject(CharityBase):
-    """The project model."""
-    name = Column(String(100), unique=True, nullable=False)
+class CharityProject(PreBaseDonationCharity):
+    name = Column(
+        String(CHARITY_NAME_MAX_LENGTH), unique=True, nullable=False)
     description = Column(Text, nullable=False)
 
     def __repr__(self) -> str:

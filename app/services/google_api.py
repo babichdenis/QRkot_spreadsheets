@@ -1,34 +1,25 @@
+from copy import deepcopy
 from datetime import datetime
 
 from aiogoogle import Aiogoogle
 
-from app.core.config import settings
-from app.variables import COLUMN_COUNT, FORMAT, ROW_COUNT
+from app.api.validators import check_google_table_range
+from app.core.config import (FORMAT, MAJOR_DIMENSION, PERMISSION_BODY_ROLE,
+                             PERMISSION_BODY_TYPE, SHEET_COLUMN_COUNT,
+                             SHEET_RANGE, SHEET_ROW_COUNT, SPREADSHEET_BODY,
+                             TABLE_VALUES, VALUE_INPUT_OPTION, settings)
+
+
+def get_table_json(data=SPREADSHEET_BODY):
+    data = deepcopy(data)
+    data['properties']['title'] += datetime.now().strftime(FORMAT)
+    return data
 
 
 async def spreadsheets_create(wrapper_services: Aiogoogle) -> str:
-    now_date_time = datetime.now().strftime(FORMAT)
     service = await wrapper_services.discover('sheets', 'v4')
-    spreadsheet_body = {
-        'properties': {
-            'title': f'Отчёт на {now_date_time}',
-            'locale': 'ru_RU'
-        },
-        'sheets': [{
-            'properties': {
-                'sheetType': 'GRID',
-                'sheetId': 0,
-                'title': 'Лист1',
-                'gridProperties': {
-                    'rowCount': ROW_COUNT,
-                    'columnCount': COLUMN_COUNT
-                }
-            }
-        }]
-    }
     response = await wrapper_services.as_service_account(
-        service.spreadsheets.create(json=spreadsheet_body)
-    )
+        service.spreadsheets.create(json=get_table_json()))
     return response['spreadsheetId']
 
 
@@ -36,44 +27,44 @@ async def set_user_permissions(
         spreadsheetid: str,
         wrapper_services: Aiogoogle
 ) -> None:
-    permissions_body = {'type': 'user',
-                        'role': 'writer',
+    permissions_body = {'type': PERMISSION_BODY_TYPE,
+                        'role': PERMISSION_BODY_ROLE,
                         'emailAddress': settings.email}
     service = await wrapper_services.discover('drive', 'v3')
     await wrapper_services.as_service_account(
         service.permissions.create(
             fileId=spreadsheetid,
             json=permissions_body,
-            fields='id'
-        ))
+            fields='id'))
 
 
 async def spreadsheets_update_value(
-        spreadsheet_id: str,
+        spreadsheetid: str,
         charity_projects: list,
         wrapper_services: Aiogoogle
 ) -> None:
-    now_date_time = datetime.now().strftime(FORMAT)
     service = await wrapper_services.discover('sheets', 'v4')
-    table_values = [
-        ['Отчёт от', now_date_time],
-        ['Проекты, отсортированные по скорости сбора средств'],
-        ['Название проекта', 'Время сбора', 'Описание']
-    ]
-    for res in charity_projects:
-        new_row = [str(res.name), str(res.close_date -
-                                      res.create_date), str(res.description)]
+    table_values = deepcopy(TABLE_VALUES)
+    table_values[0].append(datetime.now().strftime(FORMAT))
+    for project in charity_projects:
+        new_row = [
+            project.name,
+            str(project.close_date - project.create_date),
+            project.description
+        ]
         table_values.append(new_row)
 
+    check_google_table_range(
+        max(map(len, table_values)), SHEET_COLUMN_COUNT,
+        len(table_values), SHEET_ROW_COUNT)
+
     update_body = {
-        'majorDimension': 'ROWS',
+        'majorDimension': MAJOR_DIMENSION,
         'values': table_values
     }
     await wrapper_services.as_service_account(
         service.spreadsheets.values.update(
-            spreadsheetId=spreadsheet_id,
-            range='A1:E30',
-            valueInputOption='USER_ENTERED',
-            json=update_body
-        )
-    )
+            spreadsheetId=spreadsheetid,
+            range=SHEET_RANGE.format(len(table_values)),
+            valueInputOption=VALUE_INPUT_OPTION,
+            json=update_body))

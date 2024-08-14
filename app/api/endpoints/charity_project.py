@@ -1,13 +1,13 @@
+from typing import List
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.validators import (
-    check_charity_project_before_delete,
-    check_charity_project_before_edit,
-    check_name_duplicate,)
+from app.api.validators import (check_charity_project_before_delete,
+                                check_charity_project_before_edit,
+                                check_name_obj_unique)
 from app.core.db import get_async_session
 from app.core.user import current_superuser
-from app.crud.charity_project import charity_project_crud
 from app.crud import charity_project_crud, donation_crud
 from app.schemas.charity_project import (CharityProjectCreate,
                                          CharityProjectDB,
@@ -28,7 +28,7 @@ async def create_new_charity_project(
         session: AsyncSession = Depends(get_async_session),
 ):
     """Создать проект. Доступ: суперпользователь."""
-    await check_name_duplicate(
+    await check_name_obj_unique(
         obj_name=charity_project_in.name,
         session=session)
     charity_project_db = await charity_project_crud.create(
@@ -46,14 +46,14 @@ async def create_new_charity_project(
 
 @router.get(
     '/',
+    response_model=List[CharityProjectDB],
     response_model_exclude_none=True,
-    response_model=list[CharityProjectDB]
 )
 async def get_all_charity_projects(
-    session: AsyncSession = Depends(get_async_session)
+        session: AsyncSession = Depends(get_async_session),
 ):
-    """Returns a list of all projects."""
-    return await charity_project_crud.get_multi(session)
+    """Получить все проекты. Доступ: любой пользователь."""
+    return await charity_project_crud.get_multi(session=session)
 
 
 @router.patch(
@@ -76,40 +76,6 @@ async def update_charity_project(
         obj_in=charity_project_in,
         session=session)
     return charity_project_db
-# @router.patch(
-#     '/{project_id}',
-#     response_model=CharityProjectDB,
-#     dependencies=[Depends(current_superuser)],
-# )
-# async def partially_update_charity_project(
-#     project_id: int,
-#     obj_in: CharityProjectUpdate,
-#     session: AsyncSession = Depends(get_async_session),
-# ):
-#     """Only to superuser. Updates the object of the charity project."""
-#     charity_project = await check_charity_project_exists(
-#         project_id,
-#         session
-#     )
-#     charity_project = await check_charity_project_active(
-#         charity_project,
-#         session
-#     )
-#     if obj_in.name:
-#         await check_name_duplicate(obj_in.name, session)
-#     if not obj_in.full_amount:
-#         return await charity_project_crud.update(
-#             charity_project,
-#             obj_in,
-#             session
-#         )
-#     await check_charity_project_invested_amount(
-#         obj_in.full_amount,
-#         charity_project.invested_amount,
-#         session
-#     )
-#     return await process_donation(await charity_project_crud.update(
-#         charity_project, obj_in, session), [Donation])
 
 
 @router.delete(

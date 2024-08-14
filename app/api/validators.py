@@ -1,10 +1,23 @@
-from http import HTTPStatus
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.charity_project import charity_project_crud
-from app.models import CharityProject
+from app.models.charity_project import CharityProject
 from app.schemas.charity_project import CharityProjectUpdate
+
+
+async def check_name_obj_unique(
+        obj_name: str,
+        session: AsyncSession,
+) -> None:
+    """Проверить уникальность: наименование объекта."""
+    charity_project = await charity_project_crud.get_obj_by_name(
+        obj_name=obj_name,
+        session=session)
+    if charity_project is not None:
+        raise HTTPException(
+            status_code=400,
+            detail='Проект с таким именем уже существует!')
 
 
 async def check_obj_exists_by_id(
@@ -22,93 +35,28 @@ async def check_obj_exists_by_id(
     return charity_project_db
 
 
-async def check_name_duplicate(
-        obj_name: str,
-        session: AsyncSession,
-) -> None:
-    """Проверить уникальность: наименование объекта."""
-    charity_project = await charity_project_crud.get_obj_by_name(
-        obj_name=obj_name,
-        session=session)
-    if charity_project is not None:
-        raise HTTPException(
-            status_code=400,
-            detail='Проект с таким именем уже существует!')
-
-
-async def check_charity_project_exists(
-    charity_project_id: int,
-    session: AsyncSession,
-) -> CharityProject:
-    charity_project = await charity_project_crud.get_project_by_id(
-        charity_project_id,
-        session
-    )
-    if not charity_project:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
-            detail='Проект не найден!'
-        )
-    return charity_project
-
-
-async def check_charity_project_active(
-    charity_project: CharityProject,
-    session: AsyncSession,
-) -> CharityProject:
-    if charity_project.fully_invested:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail='Закрытый проект нельзя редактировать!'
-        )
-    return charity_project
-
-
-async def check_charity_project_invested(
-    charity_project: CharityProject,
-    session: AsyncSession,
-) -> None:
-    if charity_project.invested_amount:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail='В проект были внесены средства, не подлежит удалению!'
-        )
-
-
-async def check_charity_project_invested_amount(
-    invested_amount: int,
-    new_full_amount: int,
-    session: AsyncSession
-) -> None:
-    if invested_amount < new_full_amount:
-        raise HTTPException(
-            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-            detail='Нельзя установить требуемую сумму меньше уже вложенной!'
-        )
-
-
 async def check_charity_project_before_edit(
-    project_id: int,
-    project_in: CharityProjectUpdate,
-    session: AsyncSession
+        project_id: int,
+        charity_project_in: CharityProjectUpdate,
+        session: AsyncSession
 ) -> CharityProject:
-    """Проверить проект перед редактированием."""
-    project_db = await check_obj_exists_by_id(
+    """Проверить проект: перед редактированием."""
+    charity_project_db = await check_obj_exists_by_id(
         obj_id=project_id,
         session=session)
-    if project_db.close_date is not None:
+    if charity_project_db.close_date is not None:
         raise HTTPException(
             status_code=400,
             detail='Закрытый проект нельзя редактировать!')
-    if (project_in.full_amount and
-            project_db.invested_amount > project_in.full_amount):
+    if (charity_project_in.full_amount and
+            charity_project_db.invested_amount > charity_project_in.full_amount):
         raise HTTPException(
             status_code=400,
             detail='Нельзя установить требуемую сумму меньше уже вложенной')
-    await check_name_duplicate(
-        obj_name=project_in.name,
+    await check_name_obj_unique(
+        obj_name=charity_project_in.name,
         session=session)
-    return project_db
+    return charity_project_db
 
 
 async def check_charity_project_before_delete(
@@ -128,3 +76,21 @@ async def check_charity_project_before_delete(
             status_code=400,
             detail='Закрытый проект нельзя редактировать!')
     return charity_project_db
+
+
+def check_google_table_range(
+    fact_column_count: int,
+    constant_column_count: int,
+    fact_row_count: int,
+    constant_row_count: int
+):
+    if (
+        fact_column_count > constant_column_count or
+        fact_row_count > constant_row_count
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail=f'Фактическое кол-во полей {fact_column_count} '
+            f'допустимое - {constant_column_count}. '
+            f'Фактическое кол-во строк {fact_row_count}, '
+            f'допустимое - {constant_row_count}.')
